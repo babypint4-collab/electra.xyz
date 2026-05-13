@@ -4,7 +4,6 @@ import {
   Plus, 
   Link as LinkIcon, 
   Trash2, 
-  BarChart3, 
   ExternalLink, 
   Download,
   Search,
@@ -16,8 +15,6 @@ import {
 const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3001' : '';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
-  const [password, setPassword] = useState('');
   const [sessions, setSessions] = useState([]);
   const [activeSession, setActiveSession] = useState(null);
   const [logs, setLogs] = useState([]);
@@ -25,39 +22,22 @@ function App() {
   const [newSession, setNewSession] = useState({ name: '', target_url: '' });
 
   useEffect(() => {
-    if (isAuthenticated) fetchSessions();
-  }, [isAuthenticated]);
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await axios.post(`${API_BASE}/api/login`, { password });
-      localStorage.setItem('token', res.data.token);
-      setIsAuthenticated(true);
-    } catch (err) {
-      alert('Invalid password');
-    }
-  };
-
-  const getHeaders = () => ({
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-  });
+    fetchSessions();
+  }, []);
 
   const fetchSessions = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/api/sessions`, getHeaders());
+      const res = await axios.get(`${API_BASE}/api/sessions`);
       setSessions(res.data);
     } catch (err) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        setIsAuthenticated(false);
-      }
+      console.error('Error fetching sessions:', err);
     }
   };
 
   const createSession = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_BASE}/api/sessions`, newSession, getHeaders());
+      await axios.post(`${API_BASE}/api/sessions`, newSession);
       setNewSession({ name: '', target_url: '' });
       setShowCreateModal(false);
       fetchSessions();
@@ -69,7 +49,7 @@ function App() {
   const deleteSession = async (id) => {
     if (!window.confirm('Are you sure?')) return;
     try {
-      await axios.delete(`${API_BASE}/api/sessions/${id}`, getHeaders());
+      await axios.delete(`${API_BASE}/api/sessions/${id}`);
       if (activeSession?.id === id) setActiveSession(null);
       fetchSessions();
     } catch (err) {
@@ -80,7 +60,7 @@ function App() {
   const viewLogs = async (session) => {
     setActiveSession(session);
     try {
-      const res = await axios.get(`${API_BASE}/api/logs/${session.id}`, getHeaders());
+      const res = await axios.get(`${API_BASE}/api/logs/${session.id}`);
       setLogs(res.data);
     } catch (err) {
       console.error('Error fetching logs:', err);
@@ -112,32 +92,13 @@ function App() {
     document.body.removeChild(link);
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <div className="card animate-in" style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
-          <h1 className="logo" style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>ELECTRA.XYZ</h1>
-          <form onSubmit={handleLogin}>
-            <input type="password" placeholder="Enter Admin Password" required 
-                   value={password} onChange={e => setPassword(e.target.value)} 
-                   style={{ marginBottom: '1.5rem', textAlign: 'center' }} />
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Login to Dashboard</button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="app-container">
       <header className="animate-in">
         <div className="logo">ELECTRA.XYZ</div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn btn-secondary" onClick={() => { localStorage.removeItem('token'); setIsAuthenticated(false); }}>Logout</button>
-          <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
-            <Plus size={18} /> New Link
-          </button>
-        </div>
+        <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+          <Plus size={18} /> New Link
+        </button>
       </header>
 
       <div className="grid animate-in" style={{ animationDelay: '0.1s' }}>
@@ -185,7 +146,6 @@ function App() {
         ))}
       </div>
 
-      {/* Logs Table */}
       {activeSession && (
         <div className="mt-2 animate-in" style={{ animationDelay: '0.2s' }}>
           <div className="flex-between">
@@ -231,7 +191,6 @@ function App() {
         </div>
       )}
 
-      {/* Create Modal */}
       {showCreateModal && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
@@ -261,7 +220,7 @@ function App() {
       )}
 
       <style>{`
-        .active-card { border-color: var(--accent-primary); box-shadow: 0 0 20px rgba(139, 92, 246, 0.2); }
+        .active-card { border-color: var(--accent-primary); box-shadow: 0 0 20px rgba(168, 85, 247, 0.2); }
       `}</style>
     </div>
   );
