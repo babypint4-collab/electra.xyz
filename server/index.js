@@ -118,7 +118,7 @@ app.post('/api/sessions', async (req, res) => {
     }
   } catch (err) {
     console.error('Database Error:', err.message);
-    res.status(500).json({ error: 'Failed to create link' });
+    res.status(500).json({ error: err.message });
   }
 });
 
