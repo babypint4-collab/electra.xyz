@@ -43,6 +43,7 @@ function App() {
       fetchSessions();
     } catch (err) {
       console.error('Error creating session:', err);
+      alert('Failed to create link. Make sure the server is running and the database is set up.');
     }
   };
 

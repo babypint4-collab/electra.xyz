@@ -105,11 +105,21 @@ app.post('/api/sessions', async (req, res) => {
   const { name, target_url } = req.body;
   const slug = uuidv4().slice(0, 8);
   
-  const result = await db.prepare('INSERT INTO sessions (slug, name, target_url) VALUES (?, ?, ?) RETURNING id').run(slug, name, target_url);
-  const id = db.isPostgres ? result.rows[0].id : result.lastInsertRowid;
-  const newSession = await db.prepare('SELECT * FROM sessions WHERE id = ?').get(id);
-  
-  res.json(newSession);
+  try {
+    if (db.isPostgres) {
+      const result = await db.prepare('INSERT INTO sessions (slug, name, target_url) VALUES (?, ?, ?) RETURNING id').run(slug, name, target_url);
+      const id = result.rows[0].id;
+      const newSession = await db.prepare('SELECT * FROM sessions WHERE id = ?').get(id);
+      res.json(newSession);
+    } else {
+      const result = db.prepare('INSERT INTO sessions (slug, name, target_url) VALUES (?, ?, ?)').run(slug, name, target_url);
+      const newSession = db.prepare('SELECT * FROM sessions WHERE id = ?').get(result.lastInsertRowid);
+      res.json(newSession);
+    }
+  } catch (err) {
+    console.error('Database Error:', err.message);
+    res.status(500).json({ error: 'Failed to create link' });
+  }
 });
 
 app.get('/api/logs/:sessionId', async (req, res) => {
